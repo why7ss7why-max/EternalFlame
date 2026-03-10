@@ -1,0 +1,13 @@
+name: EternalFlame
+version: '1.0-SNAPSHOT'
+main: me.civworld.eternalFlame.EternalFlame
+api-version: '1.20'
+prefix: EternalFlame
+authors: [ uuun ]
+description: Plugin for CivWorld's parkour civilization core
+website: https://civworld.ru
+depend: [Citizens]
+commands:
+  eternal:
+    description: Main command (EternalFlame)
+    aliases: [eternalflame]

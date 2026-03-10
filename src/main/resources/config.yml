@@ -1,0 +1,13 @@
+plugin-prefix: "<gray>[<green>Сервер<gray>] <white>"
+config-reload: "Конфигурация <green>перезагружена<white>!"
+
+spawner:
+  attempts: 50
+  radiusX: 100
+  radiusY: 5
+  chance: 50
+
+cooldown-in-ticks: 5
+
+titan-event:
+  need-amount-item: 3
