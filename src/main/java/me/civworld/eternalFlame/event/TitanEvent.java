@@ -141,8 +141,6 @@ public class TitanEvent implements Listener {
                     World world = BukkitAdapter.adapt(start.getWorld());
 
                     try (EditSession session = WorldEdit.getInstance().newEditSession(world)) {
-
-                        // Создаём куб региона, в котором будет затираться прошлый метеорит
                         BlockVector3 min = BlockVector3.at(
                                 Math.min(start.getX(), end.getX()),
                                 Math.min(start.getY(), end.getY()),
@@ -154,7 +152,6 @@ public class TitanEvent implements Listener {
                                 Math.max(start.getZ(), end.getZ()) + clipboard.getRegion().getLength()
                         );
 
-                        // Проходим по каждому блоку региона и затираем AIR
                         for (int xx = min.getX(); xx <= max.getX(); xx++) {
                             for (int yy = min.getY(); yy <= max.getY(); yy++) {
                                 for (int zz = min.getZ(); zz <= max.getZ(); zz++) {
@@ -177,7 +174,6 @@ public class TitanEvent implements Listener {
                         double maxY = Math.max(start.getY(), end.getY());
                         double maxZ = Math.max(start.getZ(), end.getZ());
 
-// Проверяем границы X
                         if (x + width > maxX) {
                             x = maxX - width;
                         }
@@ -185,7 +181,6 @@ public class TitanEvent implements Listener {
                             x = minX;
                         }
 
-// Проверяем границы Y
                         if (y + height > maxY) {
                             y = maxY - height;
                         }
@@ -193,7 +188,6 @@ public class TitanEvent implements Listener {
                             y = minY;
                         }
 
-// Проверяем границы Z
                         if (z + length > maxZ) {
                             z = maxZ - length;
                         }
@@ -201,7 +195,6 @@ public class TitanEvent implements Listener {
                             z = minZ;
                         }
 
-                        // Вставляем новый шаг метеорита
                         Operation op = new ClipboardHolder(clipboard)
                                 .createPaste(session)
                                 .to(BlockVector3.at(x, y, z))
@@ -211,7 +204,7 @@ public class TitanEvent implements Listener {
                         Operations.complete(op);
                         session.flushQueue();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        plugin.getLogger().warning("Error: " + e.getMessage());
                     }
 
                     step++;
@@ -224,7 +217,7 @@ public class TitanEvent implements Listener {
     }
 
     @EventHandler
-    public void onChangeGamemode(PlayerGameModeChangeEvent event){
+    public void onChangeGameMode(PlayerGameModeChangeEvent event){
         Player player = event.getPlayer();
         if(!playersInGame.contains(player)) return;
 
