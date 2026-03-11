@@ -91,6 +91,6 @@ public class EternalCommand implements CommandExecutor {
         sender.sendMessage(DarkAPI.parse("<prefix>Использование:"));
         sender.sendMessage(DarkAPI.parse("<prefix><green>/" + label + " reload <gray>- <white>Перезагрузить <yellow>плагин"));
         sender.sendMessage(DarkAPI.parse("<prefix><green>/" + label + " settitan <gray>- <white>Установить <blue>титан"));
-        sender.sendMessage(DarkAPI.parse("<prefix><green>/" + label + " spawntitan <gray>- <white>Запустить <green>титана"));
+        sender.sendMessage(DarkAPI.parse("<prefix><green>/" + label + " starttitan <gray>- <white>Запустить <green>титана"));
     }
 }

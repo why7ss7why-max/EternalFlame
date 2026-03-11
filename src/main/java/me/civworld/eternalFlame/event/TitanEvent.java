@@ -1,5 +1,6 @@
 package me.civworld.eternalFlame.event;
 
+import com.comphenix.protocol.ProtocolManager;
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -20,15 +21,19 @@ import com.sk89q.worldedit.world.block.BlockTypes;
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
 import me.civworld.eternalFlame.config.Config;
+import me.civworld.eternalFlame.meteor.Meteor;
+import me.civworld.eternalFlame.npc.NPCManager;
 import me.civworld.eternalFlame.type.EventStatus;
 import me.civworld.eternalFlame.utils.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
@@ -36,26 +41,28 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import ru.civworld.darkAPI.DarkAPI;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.*;
 
 public class TitanEvent implements Listener {
     private final Plugin plugin;
     private final Config config;
+    private final NPCManager npcManager;
+    private final ProtocolManager protocolManager;
     public EventStatus eventStatus = EventStatus.OFFLINE;
 
     public final HashMap<String, Long> lastGame = new HashMap<>();
 
     public final LinkedHashSet<Player> playersInCircle = new LinkedHashSet<>();
     public final LinkedHashSet<Player> playersInGame = new LinkedHashSet<>();
+    public final LinkedHashSet<Player> playersBlindness = new LinkedHashSet<>();
 
     public Hologram hologram = null;
 
-    public TitanEvent(Plugin plugin, Config config){
+    public TitanEvent(Plugin plugin, Config config, NPCManager npcManager, ProtocolManager protocolManager){
         this.plugin = plugin;
         this.config = config;
+        this.npcManager = npcManager;
+        this.protocolManager = protocolManager;
     }
 
     public void startGame(){
@@ -65,8 +72,8 @@ public class TitanEvent implements Listener {
             iterator.remove();
 
             Location cutLocation = config.get("titan-event.position-cut", Location.class).clone();
-            cutLocation.setYaw(0);
-            cutLocation.setPitch(-45);
+            cutLocation.setYaw(36);
+            cutLocation.setPitch(-40);
 
             Tadpole tadpole = (Tadpole) cutLocation.getWorld().spawnEntity(cutLocation, EntityType.TADPOLE);
             tadpole.setGravity(false);
@@ -78,142 +85,89 @@ public class TitanEvent implements Listener {
             player.setGameMode(GameMode.SPECTATOR);
             player.setSpectatorTarget(tadpole);
 
-            float[] times = {-40};
-            BukkitRunnable runnable = new BukkitRunnable() {
+            float startYaw = 36f;
+            float endYaw = 80f;
+
+            float startPitch = -40f;
+            float endPitch = -10f;
+
+            int totalTicks = 60;
+            float yawStep = (endYaw - startYaw) / totalTicks;
+            float pitchStep = (endPitch - startPitch) / totalTicks;
+
+            float[] currentYaw = {startYaw};
+            float[] currentPitch = {startPitch};
+
+            new BukkitRunnable() {
+                int tick = 0;
                 @Override
                 public void run() {
-                    if(times[0] > -10) {
+                    if (tick >= totalTicks) {
+                        blindness(player, tadpole);
                         this.cancel();
                         return;
                     }
 
-                    cutLocation.setPitch(times[0]);
+                    currentYaw[0] += yawStep;
+                    currentPitch[0] += pitchStep;
+
+                    cutLocation.setYaw(currentYaw[0]);
+                    cutLocation.setPitch(currentPitch[0]);
+
                     tadpole.teleport(cutLocation);
                     player.setGameMode(GameMode.SPECTATOR);
                     player.setSpectatorTarget(null);
                     player.setSpectatorTarget(tadpole);
 
-                    times[0]+=0.5f;
+                    tick++;
                 }
-            };
-
-            runnable.runTaskTimer(plugin, 60L, 1L);
+            }.runTaskTimer(plugin, 60L, 1L);
 
             playersInGame.add(player);
             lastGame.put(player.getName(), System.currentTimeMillis());
         }
 
-        File file = new File(plugin.getDataFolder(), "meteorite.schem");
+        Location start = config.get("titan-event.meteorite.pos1", Location.class).clone();
+        Location end = config.get("titan-event.meteorite.pos2", Location.class).clone();
 
-        ClipboardFormat format = ClipboardFormats.findByFile(file);
-        if(format != null){
-            Clipboard clipboard;
-
-            try (ClipboardReader reader = format.getReader(new FileInputStream(file))) {
-                clipboard = reader.read();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            Location start = config.get("titan-event.meteorite.pos1", Location.class).clone();
-            Location end = config.get("titan-event.meteorite.pos2", Location.class).clone();
-
-            int steps = 7;
-
-            double dx = (end.getX() - start.getX()) / steps;
-            double dy = (end.getY() - start.getY()) / steps;
-            double dz = (end.getZ() - start.getZ()) / steps;
-
-            new BukkitRunnable() {
-                int step = 0;
-
-                @Override
-                public void run() {
-                    if (step > steps) {
-                        cancel();
-                        return;
-                    }
-
-                    double x = start.getX() + dx * step;
-                    double y = start.getY() + dy * step;
-                    double z = start.getZ() + dz * step;
-
-                    World world = BukkitAdapter.adapt(start.getWorld());
-
-                    try (EditSession session = WorldEdit.getInstance().newEditSession(world)) {
-                        BlockVector3 min = BlockVector3.at(
-                                Math.min(start.getX(), end.getX()),
-                                Math.min(start.getY(), end.getY()),
-                                Math.min(start.getZ(), end.getZ())
-                        );
-                        BlockVector3 max = BlockVector3.at(
-                                Math.max(start.getX(), end.getX()) + clipboard.getRegion().getWidth(),
-                                Math.max(start.getY(), end.getY()) + clipboard.getRegion().getHeight(),
-                                Math.max(start.getZ(), end.getZ()) + clipboard.getRegion().getLength()
-                        );
-
-                        for (int xx = min.getX(); xx <= max.getX(); xx++) {
-                            for (int yy = min.getY(); yy <= max.getY(); yy++) {
-                                for (int zz = min.getZ(); zz <= max.getZ(); zz++) {
-                                    session.setBlock(BlockVector3.at(xx, yy, zz), BlockTypes.AIR.getDefaultState());
-                                }
-                            }
-                        }
-
-                        Region clipRegion = clipboard.getRegion();
-
-                        int width = clipRegion.getWidth();
-                        int height = clipRegion.getHeight();
-                        int length = clipRegion.getLength();
-
-                        double minX = Math.min(start.getX(), end.getX());
-                        double minY = Math.min(start.getY(), end.getY());
-                        double minZ = Math.min(start.getZ(), end.getZ());
-
-                        double maxX = Math.max(start.getX(), end.getX());
-                        double maxY = Math.max(start.getY(), end.getY());
-                        double maxZ = Math.max(start.getZ(), end.getZ());
-
-                        if (x + width > maxX) {
-                            x = maxX - width;
-                        }
-                        if (x < minX) {
-                            x = minX;
-                        }
-
-                        if (y + height > maxY) {
-                            y = maxY - height;
-                        }
-                        if (y < minY) {
-                            y = minY;
-                        }
-
-                        if (z + length > maxZ) {
-                            z = maxZ - length;
-                        }
-                        if (z < minZ) {
-                            z = minZ;
-                        }
-
-                        Operation op = new ClipboardHolder(clipboard)
-                                .createPaste(session)
-                                .to(BlockVector3.at(x, y, z))
-                                .ignoreAirBlocks(false)
-                                .build();
-
-                        Operations.complete(op);
-                        session.flushQueue();
-                    } catch (Exception e) {
-                        plugin.getLogger().warning("Error: " + e.getMessage());
-                    }
-
-                    step++;
-                }
-
-            }.runTaskTimer(plugin, 0, 20);
-        }
+        Meteor meteor = new Meteor(plugin);
+        meteor.spawnMeteor(start, end);
 
         setStatus(EventStatus.RUNNING);
+    }
+
+    private void blindness(Player player, Tadpole tadpole){
+        playersInGame.remove(player);
+        playersBlindness.add(player);
+        player.setSpectatorTarget(null);
+        player.setGameMode(GameMode.ADVENTURE);
+        Location newLoc = player.getLocation();
+        newLoc.setYaw(89.9f);
+        newLoc.setPitch(-0.1f);
+        newLoc.add(0, -1.5, 0);
+        player.teleport(newLoc);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, Integer.MAX_VALUE, 255, false, false, false));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 255, false, false, false));
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            player.removePotionEffect(PotionEffectType.BLINDNESS);
+            playersInGame.add(player);
+        }, 40L);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            npcManager.startNpcTitan(this);
+            tadpole.setPersistent(false);
+            tadpole.remove();
+        }, 10L);
+    }
+
+    @EventHandler
+    public void onMove(PlayerMoveEvent event){
+        Player player = event.getPlayer();
+        if(!playersBlindness.contains(player)) return;
+
+        if(event.getFrom().distance(event.getTo()) == 0) return;
+
+        event.setCancelled(true);
     }
 
     @EventHandler

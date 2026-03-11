@@ -6,7 +6,7 @@ prefix: EternalFlame
 authors: [ uuun ]
 description: Plugin for CivWorld's parkour civilization core
 website: https://civworld.ru
-depend: [Citizens]
+depend: [Citizens, ProtocolLib, DecentHolograms]
 commands:
   eternal:
     description: Main command (EternalFlame)

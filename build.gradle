@@ -27,6 +27,7 @@ dependencies {
     compileOnly('net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT') {
         exclude group: '*', module: '*'
     }
+    compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
     implementation 'com.github.why7ss7why-max:DarkAPI:v1.0.1'
     compileOnly("com.github.decentsoftware-eu:decentholograms:2.9.9")
     compileOnly "com.fastasyncworldedit:FastAsyncWorldEdit-Core:2.9.0"

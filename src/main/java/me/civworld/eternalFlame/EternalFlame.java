@@ -1,19 +1,32 @@
 package me.civworld.eternalFlame;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.ListenerPriority;
+import com.comphenix.protocol.events.PacketAdapter;
+import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import me.civworld.eternalFlame.circle.CircleManager;
 import me.civworld.eternalFlame.command.EternalCommand;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
+import me.civworld.eternalFlame.npc.NPCManager;
 import me.civworld.eternalFlame.spawner.ItemSpawner;
 import me.civworld.eternalFlame.trait.WaypointTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.trait.Trait;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.checkerframework.checker.units.qual.N;
 import ru.civworld.darkAPI.DarkAPI;
 
 import java.util.ArrayList;
@@ -21,40 +34,46 @@ import java.util.List;
 
 public final class EternalFlame extends JavaPlugin {
     private final List<NPC> npcs = new ArrayList<>();
+    private ProtocolManager protocolManager;
 
     @Override
     public void onEnable() {
+        protocolManager = ProtocolLibrary.getProtocolManager();
+
         Config config = new Config(this);
         config.loadConfig();
 
         DarkAPI.registerPlugin(this, config.get("plugin-prefix", String.class));
 
-        NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, "test");
-        npcs.add(npc);
-
-        World world = getServer().getWorld("world");
-
-        Location spawnLoc = new Location(world, 98.5, 69, -59.5, 0, 0);
-        npc.spawn(spawnLoc);
-
-        List<Location> points = new ArrayList<>();
-        points.add(new Location(world, 97.5, 69, -59.5, 90, 0));
-        points.add(new Location(world, 96.5, 69, -59.5, 90, 0));
-        points.add(new Location(world, 94.5, 69, -59.5, 90, 0));
-        points.add(new Location(world, 82.5, 69, -59.5, 90, 0));
-
         ItemSpawner itemSpawner = new ItemSpawner(this, config);
         itemSpawner.updateSpawnings();
 
-        npc.addTrait(new WaypointTrait(points));
-        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            for (Trait trait : npc.getTraits()) {
-                trait.run();
-            }
-        }, 1L, 1L);
+        NPCManager npcManager = new NPCManager(this, config);
 
-        TitanEvent titanEvent = new TitanEvent(this, config);
+        TitanEvent titanEvent = new TitanEvent(this, config, npcManager, protocolManager);
         titanEvent.updateHologram();
+
+        protocolManager.addPacketListener(
+                new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Server.SYSTEM_CHAT, PacketType.Play.Server.CHAT, PacketType.Play.Client.CHAT) {
+                    @Override
+                    public void onPacketSending(PacketEvent event) {
+                        Player player = event.getPlayer();
+
+                        WrappedChatComponent chat = event.getPacket().getChatComponents().read(0);
+                        String json = chat.getJson();
+
+                        if (titanEvent.playersBlindness.contains(player)) {
+                            Component component = GsonComponentSerializer.gson().deserialize(json);
+                            String plain = PlainTextComponentSerializer.plainText().serialize(component);
+
+                            if (!plain.contains("Титан")) {
+                                event.setCancelled(true);
+                            }
+                        }
+                    }
+                }
+        );
+
         CircleManager circleManager = new CircleManager(this, config, titanEvent);
         circleManager.updateCircleRound();
 
