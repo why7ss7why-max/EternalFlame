@@ -290,6 +290,10 @@ public class TitanEvent implements Listener {
             player.sendActionBar(DarkAPI.parse("Вы <green>вступили<white> в <blue>ивент<white>!"));
             playersInCircle.add(player);
 
+            if(playersInCircle.size() > 1){
+                startGame();
+            }
+
             updateHologram();
         }
     }
