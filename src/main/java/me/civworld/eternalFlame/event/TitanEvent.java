@@ -124,8 +124,6 @@ public class TitanEvent implements Listener {
             double dy = (end.getY() - start.getY()) / steps;
             double dz = (end.getZ() - start.getZ()) / steps;
 
-            Set<BlockVector3> lastBlocks = new HashSet<>();
-
             new BukkitRunnable() {
                 int step = 0;
 
@@ -163,6 +161,44 @@ public class TitanEvent implements Listener {
                                     session.setBlock(BlockVector3.at(xx, yy, zz), BlockTypes.AIR.getDefaultState());
                                 }
                             }
+                        }
+
+                        Region clipRegion = clipboard.getRegion();
+
+                        int width = clipRegion.getWidth();
+                        int height = clipRegion.getHeight();
+                        int length = clipRegion.getLength();
+
+                        double minX = Math.min(start.getX(), end.getX());
+                        double minY = Math.min(start.getY(), end.getY());
+                        double minZ = Math.min(start.getZ(), end.getZ());
+
+                        double maxX = Math.max(start.getX(), end.getX());
+                        double maxY = Math.max(start.getY(), end.getY());
+                        double maxZ = Math.max(start.getZ(), end.getZ());
+
+// Проверяем границы X
+                        if (x + width > maxX) {
+                            x = maxX - width;
+                        }
+                        if (x < minX) {
+                            x = minX;
+                        }
+
+// Проверяем границы Y
+                        if (y + height > maxY) {
+                            y = maxY - height;
+                        }
+                        if (y < minY) {
+                            y = minY;
+                        }
+
+// Проверяем границы Z
+                        if (z + length > maxZ) {
+                            z = maxZ - length;
+                        }
+                        if (z < minZ) {
+                            z = minZ;
                         }
 
                         // Вставляем новый шаг метеорита
