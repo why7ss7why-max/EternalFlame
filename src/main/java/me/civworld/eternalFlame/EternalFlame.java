@@ -11,22 +11,16 @@ import me.civworld.eternalFlame.circle.CircleManager;
 import me.civworld.eternalFlame.command.EternalCommand;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
+import me.civworld.eternalFlame.listener.LeaveListener;
 import me.civworld.eternalFlame.npc.NPCManager;
 import me.civworld.eternalFlame.spawner.ItemSpawner;
-import me.civworld.eternalFlame.trait.WaypointTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.api.trait.Trait;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.units.qual.N;
 import ru.civworld.darkAPI.DarkAPI;
 
 import java.util.ArrayList;
@@ -78,6 +72,7 @@ public final class EternalFlame extends JavaPlugin {
         circleManager.updateCircleRound();
 
         getServer().getPluginManager().registerEvents(titanEvent, this);
+        getServer().getPluginManager().registerEvents(new LeaveListener(this, config, titanEvent, npcManager), this);
 
         DarkAPI.setCommand("eternal", new EternalCommand(this, config, itemSpawner, circleManager, titanEvent));
 

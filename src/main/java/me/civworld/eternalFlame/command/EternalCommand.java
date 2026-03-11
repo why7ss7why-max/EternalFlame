@@ -83,7 +83,6 @@ public class EternalCommand implements CommandExecutor {
             }
             default -> helpCommand(sender, label);
         }
-
         return true;
     }
 
