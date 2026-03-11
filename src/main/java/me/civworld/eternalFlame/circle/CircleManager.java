@@ -14,6 +14,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import ru.civworld.darkAPI.DarkAPI;
 
+import java.util.ArrayList;
+
 public class CircleManager {
     private final Plugin plugin;
     private final Config config;
@@ -38,7 +40,7 @@ public class CircleManager {
                 int radius = config.get("titan-event.circle-radius", Integer.class);
                 if(radius == 0) return;
 
-                for(Player player : titanEvent.playersInCircle){
+                for(Player player : new ArrayList<>(titanEvent.playersInCircle)){
                     if(player.getLocation().distanceSquared(centerCircle) > radius){
                         titanEvent.removePlayer(player);
                     }

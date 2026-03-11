@@ -7,42 +7,48 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import me.civworld.eternalFlame.action.ActionManager;
+import me.civworld.eternalFlame.action.PlayerAction;
 import me.civworld.eternalFlame.circle.CircleManager;
 import me.civworld.eternalFlame.command.EternalCommand;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
 import me.civworld.eternalFlame.listener.LeaveListener;
-import me.civworld.eternalFlame.npc.NPCManager;
+import me.civworld.eternalFlame.manager.NPCManager;
+import me.civworld.eternalFlame.manager.ScoreboardManager;
 import me.civworld.eternalFlame.spawner.ItemSpawner;
-import net.citizensnpcs.api.CitizensAPI;
-import net.citizensnpcs.api.npc.NPC;
+import me.civworld.eternalFlame.tab.EternalTabCompleter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.checkerframework.checker.units.qual.A;
 import ru.civworld.darkAPI.DarkAPI;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public final class EternalFlame extends JavaPlugin {
-    private final List<NPC> npcs = new ArrayList<>();
     private ProtocolManager protocolManager;
+    private NPCManager npcManager;
+    private Config config;
 
     @Override
     public void onEnable() {
         protocolManager = ProtocolLibrary.getProtocolManager();
 
-        Config config = new Config(this);
-        config.loadConfig();
+        config = new Config(this);
+
+        ActionManager actionManager = new ActionManager(config);
 
         DarkAPI.registerPlugin(this, config.get("plugin-prefix", String.class));
 
         ItemSpawner itemSpawner = new ItemSpawner(this, config);
         itemSpawner.updateSpawnings();
 
-        NPCManager npcManager = new NPCManager(this, config);
+        ScoreboardManager scoreboardManager = new ScoreboardManager(this, config);
+
+        npcManager = new NPCManager(this, config, scoreboardManager, actionManager);
 
         TitanEvent titanEvent = new TitanEvent(this, config, npcManager, protocolManager);
         titanEvent.updateHologram();
@@ -56,11 +62,11 @@ public final class EternalFlame extends JavaPlugin {
                         WrappedChatComponent chat = event.getPacket().getChatComponents().read(0);
                         String json = chat.getJson();
 
-                        if (titanEvent.playersBlindness.contains(player)) {
+                        if (titanEvent.playersInGame.contains(player)) {
                             Component component = GsonComponentSerializer.gson().deserialize(json);
                             String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
-                            if (!plain.contains("Титан")) {
+                            if (!plain.contains("❖ ")) {
                                 event.setCancelled(true);
                             }
                         }
@@ -73,18 +79,24 @@ public final class EternalFlame extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(titanEvent, this);
         getServer().getPluginManager().registerEvents(new LeaveListener(this, config, titanEvent, npcManager), this);
+        getServer().getPluginManager().registerEvents(actionManager, this);
 
-        DarkAPI.setCommand("eternal", new EternalCommand(this, config, itemSpawner, circleManager, titanEvent));
+        var command = getCommand("eternal");
+        if(command != null){
+            command.setExecutor(new EternalCommand(this, config, itemSpawner, circleManager, titanEvent, actionManager));
+            command.setTabCompleter(new EternalTabCompleter(this));
+        }
+
+        actionManager.recordedActions = actionManager.loadActions("titan");
 
         getLogger().info("Plugin is enabled.");
     }
 
     @Override
     public void onDisable() {
-        for(NPC npc : npcs){
-            CitizensAPI.getNPCRegistry().deregister(npc);
-            npc.despawn();
-            npc.destroy();
+        if(npcManager != null) npcManager.forceShutdown();
+        if(config != null) {
+            config.saveActionsYaml();
         }
     }
 }

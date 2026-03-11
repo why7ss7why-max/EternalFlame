@@ -39,29 +39,23 @@ public class WaypointTrait extends Trait {
         Location current = npc.getEntity().getLocation();
         Location feet = current.clone().subtract(0, 1, 0);
 
-        Block blockUnder = current.getWorld().getBlockAt(feet);
-        Block blockBehind = getSupportingBlockBehindNPC(current, 0.5);
-
         Vector lookDir = current.getDirection().setY(0).normalize();
 
-        Location targetAhead = feet.clone().add(lookDir);
-        Block blockAhead = targetAhead.getBlock();
-
-        Location targetTwoAhead = feet.clone().add(lookDir.multiply(2.0));
-        Block blockTwoAhead = targetTwoAhead.getBlock();
-
-        if (blockAhead.getType() == Material.AIR &&
-                blockUnder.getType() == Material.AIR &&
-                blockBehind.getType() == Material.AIR) {
-
-            if (jumpCooldown <= 0) {
-                if (blockTwoAhead.getType() != Material.AIR) {
-                    makeNpcJump(npc, 0.25, 0.15);
-                } else {
-                    makeNpcJump(npc, 0.55, 0.3);
-                }
-                jumpCooldown = 35;
+        // Идем по линии вперед на 3 блока
+        boolean obstacleAhead = false;
+        for (int i = 1; i <= 3; i++) {
+            Location checkLoc = feet.clone().add(lookDir.clone().multiply(i));
+            Block blockAt = checkLoc.getBlock();
+            Block blockAbove = checkLoc.clone().add(0, 1, 0).getBlock();
+            if (blockAt.getType() != Material.AIR || blockAbove.getType() != Material.AIR) {
+                obstacleAhead = true;
+                break;
             }
+        }
+
+        if (obstacleAhead && jumpCooldown <= 0) {
+            makeNpcJump(npc, 0.6, 0.35);
+            jumpCooldown = 35;
         }
     }
 }

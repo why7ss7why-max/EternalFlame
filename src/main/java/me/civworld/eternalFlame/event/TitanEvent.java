@@ -2,36 +2,19 @@ package me.civworld.eternalFlame.event;
 
 import com.comphenix.protocol.ProtocolManager;
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
-import com.sk89q.worldedit.EditSession;
-import com.sk89q.worldedit.WorldEdit;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldedit.extent.clipboard.Clipboard;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats;
-import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader;
-import com.sk89q.worldedit.function.operation.Operation;
-import com.sk89q.worldedit.function.operation.Operations;
-import com.sk89q.worldedit.function.pattern.BlockPattern;
-import com.sk89q.worldedit.math.BlockVector3;
-import com.sk89q.worldedit.regions.CuboidRegion;
-import com.sk89q.worldedit.regions.Region;
-import com.sk89q.worldedit.session.ClipboardHolder;
-import com.sk89q.worldedit.world.World;
-import com.sk89q.worldedit.world.block.BlockTypes;
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
 import me.civworld.eternalFlame.config.Config;
+import me.civworld.eternalFlame.manager.ScoreboardManager;
 import me.civworld.eternalFlame.meteor.Meteor;
-import me.civworld.eternalFlame.npc.NPCManager;
+import me.civworld.eternalFlame.manager.NPCManager;
 import me.civworld.eternalFlame.type.EventStatus;
 import me.civworld.eternalFlame.utils.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -46,7 +29,7 @@ import java.util.*;
 public class TitanEvent implements Listener {
     private final Plugin plugin;
     private final Config config;
-    private final NPCManager npcManager;
+    public final NPCManager npcManager;
     private final ProtocolManager protocolManager;
     public EventStatus eventStatus = EventStatus.OFFLINE;
 
@@ -54,7 +37,13 @@ public class TitanEvent implements Listener {
 
     public final LinkedHashSet<Player> playersInCircle = new LinkedHashSet<>();
     public final LinkedHashSet<Player> playersInGame = new LinkedHashSet<>();
-    public final LinkedHashSet<Player> playersBlindness = new LinkedHashSet<>();
+    public final LinkedHashSet<Player> playersInBlindness = new LinkedHashSet<>();
+
+    public final LinkedHashSet<Player> playerParkourists = new LinkedHashSet<>();
+
+    public final HashMap<Player, Integer> playerAttempts = new HashMap<>();
+
+    public final Location endLocation = new Location(Bukkit.getWorld("world"), 220.5, 65.5, -151.5);
 
     public Hologram hologram = null;
 
@@ -66,63 +55,93 @@ public class TitanEvent implements Listener {
     }
 
     public void startGame(){
-        Iterator<Player> iterator = playersInCircle.iterator();
-        while(iterator.hasNext()){
-            Player player = iterator.next();
-            iterator.remove();
+        BukkitRunnable runnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if(playerParkourists.isEmpty()) return;
 
-            Location cutLocation = config.get("titan-event.position-cut", Location.class).clone();
-            cutLocation.setYaw(36);
-            cutLocation.setPitch(-40);
+                World world = plugin.getServer().getWorld("world");
+                if(world != null){
+                    world.spawnParticle(Particle.VILLAGER_HAPPY, endLocation, 5);
+                }
 
-            Tadpole tadpole = (Tadpole) cutLocation.getWorld().spawnEntity(cutLocation, EntityType.TADPOLE);
-            tadpole.setGravity(false);
-            tadpole.setAI(false);
-            tadpole.setAgeLock(true);
-            tadpole.setInvulnerable(true);
-            tadpole.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, true, false));
+                for(Player player : playerParkourists){
+                    if(player.getLocation().distance(endLocation) < 1){
+                        player.sendMessage(DarkAPI.parse("<prefix>Вы <green>прошли <white>этот <yellow>уровень<white>!"));
+                    }
+                }
+            }
+        };
 
-            player.setGameMode(GameMode.SPECTATOR);
-            player.setSpectatorTarget(tadpole);
+        runnable.runTaskTimer(plugin, 200L, 5L);
 
-            float startYaw = 36f;
-            float endYaw = 80f;
+        Location cutLocation = config.get("titan-event.position-cut", Location.class).clone();
+        cutLocation.setYaw(36);
+        cutLocation.setPitch(-40);
 
-            float startPitch = -40f;
-            float endPitch = -10f;
+        Tadpole tadpole = (Tadpole) cutLocation.getWorld().spawnEntity(cutLocation, EntityType.TADPOLE);
+        tadpole.setGravity(false);
+        tadpole.setAI(false);
+        tadpole.setAgeLock(true);
+        tadpole.setInvulnerable(true);
+        tadpole.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 1, true, false));
 
-            int totalTicks = 60;
-            float yawStep = (endYaw - startYaw) / totalTicks;
-            float pitchStep = (endPitch - startPitch) / totalTicks;
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            npcManager.startNpcTitan(this);
+            tadpole.setPersistent(false);
+            tadpole.remove();
+        }, 130L);
 
-            float[] currentYaw = {startYaw};
-            float[] currentPitch = {startPitch};
+        float startYaw = 36f;
+        float endYaw = 80f;
 
-            new BukkitRunnable() {
-                int tick = 0;
-                @Override
-                public void run() {
-                    if (tick >= totalTicks) {
-                        blindness(player, tadpole);
-                        this.cancel();
-                        return;
+        float startPitch = -40f;
+        float endPitch = -10f;
+
+        int totalTicks = 60;
+        float yawStep = (endYaw - startYaw) / totalTicks;
+        float pitchStep = (endPitch - startPitch) / totalTicks;
+
+        float[] currentYaw = {startYaw};
+        float[] currentPitch = {startPitch};
+
+        new BukkitRunnable() {
+            int tick = 0;
+            @Override
+            public void run() {
+                if (tick >= totalTicks) {
+                    for (Player p1 : playersInGame) {
+                        for (Player p2 : playersInGame) {
+                            if (!p1.equals(p2)) {
+                                p1.hidePlayer(plugin, p2);
+                                p2.hidePlayer(plugin, p1);
+                            }
+                        }
                     }
 
-                    currentYaw[0] += yawStep;
-                    currentPitch[0] += pitchStep;
-
-                    cutLocation.setYaw(currentYaw[0]);
-                    cutLocation.setPitch(currentPitch[0]);
-
-                    tadpole.teleport(cutLocation);
-                    player.setGameMode(GameMode.SPECTATOR);
-                    player.setSpectatorTarget(null);
-                    player.setSpectatorTarget(tadpole);
-
-                    tick++;
+                    for (Player player : new ArrayList<>(playersInGame)) {
+                        blindness(player);
+                    }
+                    this.cancel();
+                    return;
                 }
-            }.runTaskTimer(plugin, 60L, 1L);
 
+                currentYaw[0] += yawStep;
+                currentPitch[0] += pitchStep;
+
+                cutLocation.setYaw(currentYaw[0]);
+                cutLocation.setPitch(currentPitch[0]);
+
+                tadpole.teleport(cutLocation);
+
+                tick++;
+            }
+        }.runTaskTimer(plugin, 60L, 1L);
+
+        for (Player player : new ArrayList<>(playersInCircle)) {
+            playersInCircle.remove(player);
+            player.setGameMode(GameMode.SPECTATOR);
+            player.setSpectatorTarget(tadpole);
             playersInGame.add(player);
             lastGame.put(player.getName(), System.currentTimeMillis());
         }
@@ -136,9 +155,9 @@ public class TitanEvent implements Listener {
         setStatus(EventStatus.RUNNING);
     }
 
-    private void blindness(Player player, Tadpole tadpole){
+    private void blindness(Player player){
         playersInGame.remove(player);
-        playersBlindness.add(player);
+        playersInBlindness.add(player);
         player.setSpectatorTarget(null);
         player.setGameMode(GameMode.ADVENTURE);
         Location newLoc = player.getLocation();
@@ -151,21 +170,26 @@ public class TitanEvent implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             player.removePotionEffect(PotionEffectType.BLINDNESS);
             playersInGame.add(player);
+            playersInBlindness.remove(player);
         }, 40L);
+    }
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            npcManager.startNpcTitan(this);
-            tadpole.setPersistent(false);
-            tadpole.remove();
-        }, 10L);
+    @EventHandler
+    public void onDropItem(PlayerDropItemEvent event){
+        Player player = event.getPlayer();
+        if(!playersInGame.contains(player) && !playersInBlindness.contains(player)) return;
+
+        event.setCancelled(true);
     }
 
     @EventHandler
     public void onMove(PlayerMoveEvent event){
         Player player = event.getPlayer();
-        if(!playersBlindness.contains(player)) return;
+        if(!playersInGame.contains(player) && !playersInBlindness.contains(player)) return;
 
         if(event.getFrom().distance(event.getTo()) == 0) return;
+
+        if(playerParkourists.contains(player)) return;
 
         event.setCancelled(true);
     }
@@ -182,6 +206,8 @@ public class TitanEvent implements Listener {
     public void onTeleport(PlayerTeleportEvent event){
         Player player = event.getPlayer();
         if(!playersInGame.contains(player)) return;
+
+        if(event.getCause() == PlayerTeleportEvent.TeleportCause.UNKNOWN) return;
 
         event.setCancelled(true);
     }

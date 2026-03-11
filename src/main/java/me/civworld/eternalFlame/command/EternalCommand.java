@@ -1,9 +1,11 @@
 package me.civworld.eternalFlame.command;
 
+import me.civworld.eternalFlame.action.ActionManager;
 import me.civworld.eternalFlame.circle.CircleManager;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
 import me.civworld.eternalFlame.spawner.ItemSpawner;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,13 +20,15 @@ public class EternalCommand implements CommandExecutor {
     private final ItemSpawner itemSpawner;
     private final CircleManager circleManager;
     private final TitanEvent titanEvent;
+    private final ActionManager actionManager;
 
-    public EternalCommand(Plugin plugin, Config config, ItemSpawner itemSpawner, CircleManager circleManager, TitanEvent titanEvent){
+    public EternalCommand(Plugin plugin, Config config, ItemSpawner itemSpawner, CircleManager circleManager, TitanEvent titanEvent, ActionManager actionManager){
         this.plugin = plugin;
         this.config = config;
         this.itemSpawner = itemSpawner;
         this.circleManager = circleManager;
         this.titanEvent = titanEvent;
+        this.actionManager = actionManager;
     }
 
     @Override
@@ -46,7 +50,7 @@ public class EternalCommand implements CommandExecutor {
                     return true;
                 }
 
-                config.reloadConfig();
+                config.reloadAll();
 
                 itemSpawner.updateSpawnings();
                 circleManager.updateCircleRound();
@@ -65,7 +69,8 @@ public class EternalCommand implements CommandExecutor {
 
                 config.set("titan-event.position", player.getLocation());
                 config.configCache.put("titan-event.position", player.getLocation());
-                config.saveConfig();
+                config.saveMainConfig();
+                config.saveActionsYaml();
                 player.sendMessage(DarkAPI.parse("<prefix>Успешно <green>установлено<white>!"));
             }
             case "starttitan" -> {
@@ -80,6 +85,54 @@ public class EternalCommand implements CommandExecutor {
                 }
 
                 titanEvent.startGame();
+            }
+            case "getloc" -> {
+                if(!sender.hasPermission("eternal.getloc")){
+                    sender.sendMessage(DarkAPI.parse("<prefix>Вы <red>не администратор<white>!"));
+                    return true;
+                }
+
+                if(!(sender instanceof Player player)){
+                    sender.sendMessage(DarkAPI.parse("<prefix>Вы <red>не игрок<white>!"));
+                    return true;
+                }
+
+                Location loc = player.getLocation();
+                String text = "new Location(Bukkit.getWorld(\"world\"), " + loc.getX() + ", " + loc.getY() + ", " + loc.getZ() + ", " + loc.getPitch() + "f, " + loc.getYaw() + "f);";
+                player.sendMessage(DarkAPI.parse("<prefix><click:copy_to_clipboard:'" + text + "'>" +
+                        "<hover:show_text:'<white>Нажмите <gray>[<green>ЛКМ<gray>]<white>, чтобы <yellow>скопировать'>" +
+                        text +
+                        "</hover></click>"));
+            }
+            case "startrec" -> {
+                if(!sender.hasPermission("eternal.startrec")){
+                    sender.sendMessage(DarkAPI.parse("<prefix>Вы <red>не администратор<white>!"));
+                    return true;
+                }
+
+                if(!(sender instanceof Player player)){
+                    sender.sendMessage(DarkAPI.parse("<prefix>Вы <red>не игрок<white>!"));
+                    return true;
+                }
+
+                actionManager.clear();
+                actionManager.record = player.getName();
+                player.sendMessage(DarkAPI.parse("<prefix>Начинаем записывать ваши движения..."));
+            }
+            case "stoprec" -> {
+                if(!sender.hasPermission("eternal.stoprec")){
+                    sender.sendMessage(DarkAPI.parse("<prefix>Вы <red>не администратор<white>!"));
+                    return true;
+                }
+
+                if(!(sender instanceof Player player)){
+                    sender.sendMessage(DarkAPI.parse("<prefix>Вы <red>не игрок<white>!"));
+                    return true;
+                }
+
+                actionManager.record = null;
+                actionManager.saveActions("titan");
+                player.sendMessage(DarkAPI.parse("<prefix>Останавливаем запись..."));
             }
             default -> helpCommand(sender, label);
         }
