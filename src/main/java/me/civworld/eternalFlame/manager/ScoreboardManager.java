@@ -53,9 +53,6 @@ public class ScoreboardManager {
             score.setScore(lines.size() - i);
         }
 
-        plugin.getLogger().info("Players in game: " + titanEvent.playersInGame);
-        plugin.getLogger().info("Players in circle: " + titanEvent.playersInCircle);
-        plugin.getLogger().info("Players in blindness: " + titanEvent.playersInBlindness);
         for (Player player : titanEvent.playersInGame) {
             player.setScoreboard(board);
             player.removePotionEffect(PotionEffectType.BLINDNESS);

@@ -130,8 +130,6 @@ public class NPCManager {
     }
 
     public void startParkour(){
-        npc.removeTrait(LookClose.class);
-
         npc.teleport(new Location(Bukkit.getWorld("world"), 210.5, 63.0, -127.5, 0.0f, -180.0f), PlayerTeleportEvent.TeleportCause.PLUGIN);
 
         npc.setName("&9Титан");
@@ -142,6 +140,9 @@ public class NPCManager {
             @Override
             public void run() {
                 if (index >= actionManager.titanActions.size()) {
+                    LookClose lookClose = npc.getOrAddTrait(LookClose.class);
+                    lookClose.lookClose(true);
+                    lookClose.setRange(40);
                     cancel();
                     return;
                 }
