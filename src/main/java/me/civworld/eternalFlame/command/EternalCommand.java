@@ -10,20 +10,17 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import ru.civworld.darkAPI.DarkAPI;
 
 public class EternalCommand implements CommandExecutor {
-    private final Plugin plugin;
     private final Config config;
     private final ItemSpawner itemSpawner;
     private final CircleManager circleManager;
     private final TitanEvent titanEvent;
     private final ActionManager actionManager;
 
-    public EternalCommand(Plugin plugin, Config config, ItemSpawner itemSpawner, CircleManager circleManager, TitanEvent titanEvent, ActionManager actionManager){
-        this.plugin = plugin;
+    public EternalCommand(Config config, ItemSpawner itemSpawner, CircleManager circleManager, TitanEvent titanEvent, ActionManager actionManager){
         this.config = config;
         this.itemSpawner = itemSpawner;
         this.circleManager = circleManager;

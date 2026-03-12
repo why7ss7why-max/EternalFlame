@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Config {
-
     private final Plugin plugin;
     public final Map<String, Object> configCache = new HashMap<>();
 
@@ -68,7 +67,7 @@ public class Config {
                 plugin.getDataFolder().mkdirs();
                 actionsFile.createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+                plugin.getLogger().warning("Error: " + e.getMessage());
             }
         }
 
@@ -95,7 +94,7 @@ public class Config {
         try{
             actionsYaml.save(actionsFile);
         } catch(IOException e){
-            e.printStackTrace();
+            plugin.getLogger().warning("Error: " + e.getMessage());
         }
     }
 }

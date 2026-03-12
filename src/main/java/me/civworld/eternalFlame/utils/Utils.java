@@ -1,26 +1,14 @@
 package me.civworld.eternalFlame.utils;
 
-import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import java.util.Random;
 
 public class Utils {
-    public static Block getSupportingBlockBehindNPC(Location loc, double distanceBack) {
-        Vector backward = loc.getDirection().setY(0).normalize().multiply(-distanceBack);
-
-        Location feet = loc.clone().subtract(0, 1, 0);
-
-        Location checkLoc = feet.clone().add(backward);
-        return checkLoc.getBlock();
-    }
-
     public static String formatMillis(long millis) {
         long totalSeconds = millis / 1000;
         long hours = totalSeconds / 3600;
@@ -35,21 +23,6 @@ public class Utils {
         return sb.toString();
     }
 
-    public static void makeNpcJump(NPC npc, double jumpHeight, double forwardMultiplier) {
-        if (!npc.isSpawned()) return;
-
-        LivingEntity entity = (LivingEntity) npc.getEntity();
-
-        Vector currentVelocity = entity.getVelocity();
-
-        Vector lookDir = entity.getLocation().getDirection().setY(0).normalize();
-        Vector jumpVector = lookDir.multiply(forwardMultiplier);
-
-        jumpVector.setY(jumpHeight);
-
-        entity.setVelocity(jumpVector.add(currentVelocity));
-    }
-
     public static boolean isLucky(int chance){
         Random random = new Random();
         return random.nextInt(100) < chance;
@@ -60,11 +33,10 @@ public class Utils {
         World world = player.getWorld();
 
         for (int attempt = 0; attempt < attempts; attempt++) {
-            double dx = (random.nextDouble() * 2 - 1) * radiusX; // 100
-            double dz = (random.nextDouble() * 2 - 1) * radiusX; // 100
+            double dx = (random.nextDouble() * 2 - 1) * radiusX;
+            double dz = (random.nextDouble() * 2 - 1) * radiusX;
 
             double dy = radiusY + random.nextInt((radiusY * 2) - radiusY + 1);
-//            double dy = 5 + random.nextInt(10 - 5 + 1);
 
             Location loc = player.getLocation().clone().add(dx, dy, dz);
 
@@ -79,5 +51,11 @@ public class Utils {
         }
 
         return null;
+    }
+
+    public static String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d", minutes, secs);
     }
 }

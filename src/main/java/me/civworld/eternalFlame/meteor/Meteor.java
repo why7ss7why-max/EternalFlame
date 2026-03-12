@@ -10,7 +10,6 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class Meteor {
-
     private final Plugin plugin;
 
     public Meteor(Plugin plugin) {
@@ -18,20 +17,16 @@ public class Meteor {
     }
 
     public void spawnMeteor(Location start, Location target) {
-
         World world = start.getWorld();
 
-        // создаём один большой магма-блок
         BlockDisplay display = (BlockDisplay) world.spawnEntity(start, EntityType.BLOCK_DISPLAY);
         display.setBlock(Bukkit.createBlockData(Material.MAGMA_BLOCK));
 
-        float size = 8f; // размер блока
+        float size = 8f;
         Vector3f scale = new Vector3f(size, size, size);
 
-        // вектор направления
         Vector direction = target.toVector().subtract(start.toVector()).normalize();
 
-        // один поворот в сторону полёта
         Quaternionf rotation = lookAtQuaternion(direction);
 
         display.setTransformation(new Transformation(
@@ -44,7 +39,6 @@ public class Meteor {
         Vector velocity = direction.clone().multiply(0.6);
 
         new BukkitRunnable() {
-
             boolean landed = false;
             long landTime = 0;
 

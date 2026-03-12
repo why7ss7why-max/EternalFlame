@@ -8,7 +8,6 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import me.civworld.eternalFlame.action.ActionManager;
-import me.civworld.eternalFlame.action.PlayerAction;
 import me.civworld.eternalFlame.circle.CircleManager;
 import me.civworld.eternalFlame.command.EternalCommand;
 import me.civworld.eternalFlame.config.Config;
@@ -23,19 +22,15 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.units.qual.A;
 import ru.civworld.darkAPI.DarkAPI;
 
-import java.util.List;
-
 public final class EternalFlame extends JavaPlugin {
-    private ProtocolManager protocolManager;
     private NPCManager npcManager;
     private Config config;
 
     @Override
     public void onEnable() {
-        protocolManager = ProtocolLibrary.getProtocolManager();
+        ProtocolManager protocolManager = ProtocolLibrary.getProtocolManager();
 
         config = new Config(this);
 
@@ -46,11 +41,11 @@ public final class EternalFlame extends JavaPlugin {
         ItemSpawner itemSpawner = new ItemSpawner(this, config);
         itemSpawner.updateSpawnings();
 
-        ScoreboardManager scoreboardManager = new ScoreboardManager(this, config);
+        ScoreboardManager scoreboardManager = new ScoreboardManager(this);
 
         npcManager = new NPCManager(this, config, scoreboardManager, actionManager);
 
-        TitanEvent titanEvent = new TitanEvent(this, config, npcManager, protocolManager);
+        TitanEvent titanEvent = new TitanEvent(this, config, npcManager);
         titanEvent.updateHologram();
 
         protocolManager.addPacketListener(
@@ -78,16 +73,16 @@ public final class EternalFlame extends JavaPlugin {
         circleManager.updateCircleRound();
 
         getServer().getPluginManager().registerEvents(titanEvent, this);
-        getServer().getPluginManager().registerEvents(new LeaveListener(this, config, titanEvent, npcManager), this);
+        getServer().getPluginManager().registerEvents(new LeaveListener(config, titanEvent, npcManager), this);
         getServer().getPluginManager().registerEvents(actionManager, this);
 
         var command = getCommand("eternal");
         if(command != null){
-            command.setExecutor(new EternalCommand(this, config, itemSpawner, circleManager, titanEvent, actionManager));
-            command.setTabCompleter(new EternalTabCompleter(this));
+            command.setExecutor(new EternalCommand(config, itemSpawner, circleManager, titanEvent, actionManager));
+            command.setTabCompleter(new EternalTabCompleter());
         }
 
-        actionManager.recordedActions = actionManager.loadActions("titan");
+        actionManager.titanActions = actionManager.loadActions("titan");
 
         getLogger().info("Plugin is enabled.");
     }

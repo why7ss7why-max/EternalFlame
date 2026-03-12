@@ -1,6 +1,5 @@
 package me.civworld.eternalFlame.manager;
 
-import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -17,13 +16,13 @@ import org.bukkit.scoreboard.Scoreboard;
 import java.util.ArrayList;
 import java.util.List;
 
+import static me.civworld.eternalFlame.utils.Utils.formatTime;
+
 public class ScoreboardManager {
     private final Plugin plugin;
-    private final Config config;
 
-    public ScoreboardManager(Plugin plugin, Config config){
+    public ScoreboardManager(Plugin plugin){
         this.plugin = plugin;
-        this.config = config;
     }
 
     public void titanEvent(TitanEvent titanEvent){
@@ -86,30 +85,24 @@ public class ScoreboardManager {
                 }
 
                 List<String> lines = new ArrayList<>();
-                lines.add(""); // пустая строка сверху
+                lines.add("");
                 lines.add("§cЗадача§f: Победить титана");
-                lines.add(" "); // пустая строка для отступа
+                lines.add(" ");
                 lines.add("§fИгроки:");
                 for (Player p : titanEvent.playersInGame) {
                     lines.add("§7 - §f" + p.getName() + " §c❤❤❤");
                 }
-                lines.add("  "); // ещё одна пустая строка для отступа
-                lines.add("Время: §e" + formatTime(time[0])); // здесь можно вставлять динамический таймер
+                lines.add("  ");
+                lines.add("Время: §e" + formatTime(time[0]));
 
                 for (int i = 0; i < lines.size(); i++) {
                     String line = lines.get(i);
-                    if (line.trim().isEmpty()) line = " ".repeat(i + 1); // делает строку уникальной
+                    if (line.trim().isEmpty()) line = " ".repeat(i + 1);
                     Score score = obj.getScore(line);
                     score.setScore(lines.size() - i);
                 }
             }
         }
         time[0]--;
-    }
-
-    private String formatTime(int seconds) {
-        int minutes = seconds / 60;
-        int secs = seconds % 60;
-        return String.format("%02d:%02d", minutes, secs);
     }
 }

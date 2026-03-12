@@ -13,10 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 public class ActionManager implements Listener {
-
     private final Config config;
 
-    public List<PlayerAction> recordedActions = new ArrayList<>();
+    public List<PlayerAction> titanActions = new ArrayList<>();
     public String record = null;
 
     public ActionManager(Config config){
@@ -29,11 +28,10 @@ public class ActionManager implements Listener {
         Player player = e.getPlayer();
         if(!record.equals(player.getName())) return;
 
-        recordedActions.add(new PlayerAction(e.getTo(), System.currentTimeMillis()));
+        titanActions.add(new PlayerAction(e.getTo(), System.currentTimeMillis()));
     }
 
     public List<PlayerAction> loadActions(String name){
-
         List<PlayerAction> actions = new ArrayList<>();
 
         if(!config.getActionsYaml().contains("titans." + name)) return actions;
@@ -64,7 +62,7 @@ public class ActionManager implements Listener {
 
         List<Map<String, Object>> list = new ArrayList<>();
 
-        for(PlayerAction action : recordedActions){
+        for(PlayerAction action : titanActions){
             list.add(Map.of(
                     "x", action.location.getX(),
                     "y", action.location.getY(),
@@ -80,6 +78,6 @@ public class ActionManager implements Listener {
 
     public void clear(){
         record = null;
-        recordedActions.clear();
+        titanActions.clear();
     }
 }

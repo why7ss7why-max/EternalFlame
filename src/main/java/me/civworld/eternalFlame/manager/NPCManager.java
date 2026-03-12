@@ -6,10 +6,8 @@ import me.civworld.eternalFlame.action.ActionManager;
 import me.civworld.eternalFlame.action.PlayerAction;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
-import me.civworld.eternalFlame.trait.WaypointTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
-import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.trait.HologramTrait;
 import net.citizensnpcs.trait.LookClose;
 import net.citizensnpcs.trait.SkinTrait;
@@ -120,9 +118,7 @@ public class NPCManager {
             }
         }, 260L);
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            DHAPI.removeHologram(playerHologram.getName());
-        }, 320L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> DHAPI.removeHologram(playerHologram.getName()), 320L);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             for(Player player : titanEvent.playersInGame){
@@ -131,18 +127,6 @@ public class NPCManager {
 
             scoreboardManager.titanEvent(titanEvent);
         }, 340L);
-
-//        npc.addTrait(hologramTrait);
-
-//        List<Location> points = new ArrayList<>();
-//        points.add(new Location(world, 97.5, 69, -59.5, 90, 0));
-//        points.add(new Location(world, 96.5, 69, -59.5, 90, 0));
-//        points.add(new Location(world, 94.5, 69, -59.5, 90, 0));
-//        points.add(new Location(world, 82.5, 69, -59.5, 90, 0));
-//
-//        npc.addTrait(new WaypointTrait(points));
-//
-//
     }
 
     public void startParkour(){
@@ -157,32 +141,16 @@ public class NPCManager {
 
             @Override
             public void run() {
-                if (index >= actionManager.recordedActions.size()) {
+                if (index >= actionManager.titanActions.size()) {
                     cancel();
                     return;
                 }
 
-                PlayerAction action = actionManager.recordedActions.get(index);
+                PlayerAction action = actionManager.titanActions.get(index);
                 npc.teleport(action.location, PlayerTeleportEvent.TeleportCause.PLUGIN);
                 index++;
             }
         }.runTaskTimer(plugin, 0L, 1L);
-
-//        List<Location> waypoints = new ArrayList<>();
-//        waypoints.add(new Location(Bukkit.getWorld("world"), 210.5, 64.0, -131.5, 0.0f, -180.0f));
-//        waypoints.add(new Location(Bukkit.getWorld("world"), 210.5, 65.0, -134.5, 0.0f, -180.0f));
-//        waypoints.add(new Location(Bukkit.getWorld("world"), 210.5, 65.0, -138.5, 0.0f, -180.0f));
-//        waypoints.add(new Location(Bukkit.getWorld("world"), 210.5, 65.0, -142.5, 0.0f, -180.0f));
-//        waypoints.add(new Location(Bukkit.getWorld("world"), 210.5, 65.0, -147.5, 0.0f, -180.0f));
-//        WaypointTrait waypointTrait = new WaypointTrait(waypoints);
-//
-//        npc.addTrait(waypointTrait);
-//
-//        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-//            for (Trait trait : npc.getTraits()) {
-//                trait.run();
-//            }
-//        }, 1L, 1L);
     }
 
     public void forceShutdown(){

@@ -5,7 +5,6 @@ import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
 import me.civworld.eternalFlame.config.Config;
-import me.civworld.eternalFlame.manager.ScoreboardManager;
 import me.civworld.eternalFlame.meteor.Meteor;
 import me.civworld.eternalFlame.manager.NPCManager;
 import me.civworld.eternalFlame.type.EventStatus;
@@ -30,7 +29,6 @@ public class TitanEvent implements Listener {
     private final Plugin plugin;
     private final Config config;
     public final NPCManager npcManager;
-    private final ProtocolManager protocolManager;
     public EventStatus eventStatus = EventStatus.OFFLINE;
 
     public final HashMap<String, Long> lastGame = new HashMap<>();
@@ -47,11 +45,10 @@ public class TitanEvent implements Listener {
 
     public Hologram hologram = null;
 
-    public TitanEvent(Plugin plugin, Config config, NPCManager npcManager, ProtocolManager protocolManager){
+    public TitanEvent(Plugin plugin, Config config, NPCManager npcManager){
         this.plugin = plugin;
         this.config = config;
         this.npcManager = npcManager;
-        this.protocolManager = protocolManager;
     }
 
     public void startGame(){

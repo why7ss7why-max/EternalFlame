@@ -9,17 +9,14 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
 
 public class LeaveListener implements Listener {
-    private final Plugin plugin;
     private final Config config;
     private final TitanEvent titanEvent;
     private final NPCManager npcManager;
 
-    public LeaveListener(Plugin plugin, Config config, TitanEvent titanEvent, NPCManager npcManager){
-        this.plugin = plugin;
+    public LeaveListener(Config config, TitanEvent titanEvent, NPCManager npcManager){
         this.config = config;
         this.titanEvent = titanEvent;
         this.npcManager = npcManager;
