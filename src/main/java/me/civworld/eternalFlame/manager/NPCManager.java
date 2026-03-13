@@ -24,6 +24,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.NotNull;
 import ru.civworld.darkAPI.DarkAPI;
 
 import java.util.ArrayList;
@@ -64,16 +65,7 @@ public class NPCManager {
 
         npc.setName("&#3446ebТитан");
 
-        HashMap<String, String> lines = new HashMap<>();
-        lines.put("Хах, кто-то посмел бросить мне вызов?", "Ну-ну, посмотрим, кто осмелился встать против меня!");
-        lines.put("Как такие жалкие существа, посмели меня потревожить?", "Серьёзно? Думаете, вы меня остановите?");
-        lines.put("Ах, ты смеешь бросить мне вызов?", "Смешно… Я раздавлю тебя за мгновение!");
-        lines.put("Ох, кто осмелился против меня восстать?", "Глупцы! Вы даже не представляете, с кем связались!");
-        lines.put("Ха, ты действительно думаешь, что сможешь со мной справиться?", "Я уничтожу всё на своём пути, включая тебя!");
-        lines.put("Ты смеешь противостоять мне?", "Слишком смело… Ты узнаешь силу Титана!");
-        lines.put("Серьёзно думаешь, что сможешь меня напугать?", "Ха! Твоё ничтожество смешно в сравнении со мной!");
-        lines.put("Кто осмелился нарушить мой покой?", "Глупцы! Я раздавлю вас без жалости!");
-        lines.put("Ты надеешься победить меня?", "Мечты, пустые мечты… Я сокрушу всё вокруг!");
+        HashMap<String, String> lines = getStringStringHashMap();
 
         List<String> keys = new ArrayList<>(lines.keySet());
         String firstLine = keys.get(new Random().nextInt(keys.size()));
@@ -125,12 +117,29 @@ public class NPCManager {
                 player.showTitle(Title.title(DarkAPI.parse("<red>Задача"), DarkAPI.parse("<white>Одолеть Титана")));
             }
 
-            scoreboardManager.titanEvent(titanEvent);
+            scoreboardManager.titanEvent(titanEvent, this);
         }, 340L);
     }
 
+    private @NotNull HashMap<String, String> getStringStringHashMap() {
+        HashMap<String, String> lines = new HashMap<>();
+        lines.put("Хах, кто-то посмел бросить мне вызов?", "Ну-ну, посмотрим, кто осмелился встать против меня!");
+        lines.put("Как такие жалкие существа, посмели меня потревожить?", "Серьёзно? Думаете, вы меня остановите?");
+        lines.put("Ах, ты смеешь бросить мне вызов?", "Смешно… Я раздавлю тебя за мгновение!");
+        lines.put("Ох, кто осмелился против меня восстать?", "Глупцы! Вы даже не представляете, с кем связались!");
+        lines.put("Ха, ты действительно думаешь, что сможешь со мной справиться?", "Я уничтожу всё на своём пути, включая тебя!");
+        lines.put("Ты смеешь противостоять мне?", "Слишком смело… Ты узнаешь силу Титана!");
+        lines.put("Серьёзно думаешь, что сможешь меня напугать?", "Ха! Твоё ничтожество смешно в сравнении со мной!");
+        lines.put("Кто осмелился нарушить мой покой?", "Глупцы! Я раздавлю вас без жалости!");
+        lines.put("Ты надеешься победить меня?", "Мечты, пустые мечты… Я сокрушу всё вокруг!");
+        return lines;
+    }
+
     public void startParkour(){
-        npc.teleport(new Location(Bukkit.getWorld("world"), 210.5, 63.0, -127.5, 0.0f, -180.0f), PlayerTeleportEvent.TeleportCause.PLUGIN);
+        npc.removeTrait(LookClose.class);
+
+        Location npcLocation = new Location(Bukkit.getWorld("world"), 210.5, 63.0, -127.5, 0.0f, -180.0f);
+        npc.teleport(npcLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
 
         npc.setName("&9Титан");
 
@@ -143,6 +152,7 @@ public class NPCManager {
                     LookClose lookClose = npc.getOrAddTrait(LookClose.class);
                     lookClose.lookClose(true);
                     lookClose.setRange(40);
+                    lookClose.run();
                     cancel();
                     return;
                 }

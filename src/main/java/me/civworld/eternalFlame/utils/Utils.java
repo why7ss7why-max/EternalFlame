@@ -5,10 +5,20 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
 
 import java.util.Random;
 
 public class Utils {
+    public static void removePlayerScoreboard(Player player){
+        Scoreboard board = player.getScoreboard();
+        Objective obj = board.getObjective("titanEvent");
+        if (obj != null) {
+            obj.unregister();
+        }
+    }
+
     public static String formatMillis(long millis) {
         long totalSeconds = millis / 1000;
         long hours = totalSeconds / 3600;
@@ -33,8 +43,8 @@ public class Utils {
         World world = player.getWorld();
 
         for (int attempt = 0; attempt < attempts; attempt++) {
-            double dx = (random.nextDouble() * 2 - 1) * radiusX;
-            double dz = (random.nextDouble() * 2 - 1) * radiusX;
+            double dx = (random.nextDouble() * 2 - 1) * radiusX; // 100
+            double dz = (random.nextDouble() * 2 - 1) * radiusX; // 100
 
             double dy = radiusY + random.nextInt((radiusY * 2) - radiusY + 1);
 
@@ -51,11 +61,5 @@ public class Utils {
         }
 
         return null;
-    }
-
-    public static String formatTime(int seconds) {
-        int minutes = seconds / 60;
-        int secs = seconds % 60;
-        return String.format("%02d:%02d", minutes, secs);
     }
 }

@@ -11,6 +11,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.potion.PotionEffectType;
 
+import static me.civworld.eternalFlame.utils.Utils.removePlayerScoreboard;
+
 public class LeaveListener implements Listener {
     private final Config config;
     private final TitanEvent titanEvent;
@@ -27,18 +29,22 @@ public class LeaveListener implements Listener {
         Player player = event.getPlayer();
 
         if(!(titanEvent.playersInCircle.remove(player)
-                | titanEvent.playersInGame.remove(player))) {
+                | titanEvent.playersInGame.remove(player)
+                | titanEvent.playerParkourists.remove(player)
+                | titanEvent.playersInBlindness.remove(player))) {
             return;
         }
         player.removePotionEffect(PotionEffectType.BLINDNESS);
         player.removePotionEffect(PotionEffectType.SLOW);
+
+        removePlayerScoreboard(player);
 
         Location spawnLocation = config.get("titan-event.tp-on-leave", Location.class);
         if(spawnLocation != null){
             player.teleport(spawnLocation);
         }
 
-        if(titanEvent.playersInGame.isEmpty()){
+        if(titanEvent.playersInGame.isEmpty() && titanEvent.playersInBlindness.isEmpty() && titanEvent.playerParkourists.isEmpty()){
             npcManager.forceShutdown();
         }
     }

@@ -1,6 +1,5 @@
 package me.civworld.eternalFlame.event;
 
-import com.comphenix.protocol.ProtocolManager;
 import com.destroystokyo.paper.event.player.PlayerStopSpectatingEntityEvent;
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
@@ -40,6 +39,7 @@ public class TitanEvent implements Listener {
     public final LinkedHashSet<Player> playerParkourists = new LinkedHashSet<>();
 
     public final HashMap<Player, Integer> playerAttempts = new HashMap<>();
+    public final HashMap<Player, Boolean> playerDone = new HashMap<>();
 
     public final Location endLocation = new Location(Bukkit.getWorld("world"), 220.5, 65.5, -151.5);
 
@@ -63,8 +63,14 @@ public class TitanEvent implements Listener {
                 }
 
                 for(Player player : playerParkourists){
-                    if(player.getLocation().distance(endLocation) < 1){
-                        player.sendMessage(DarkAPI.parse("<prefix>Вы <green>прошли <white>этот <yellow>уровень<white>!"));
+                    if(player.getLocation().distance(endLocation) < 1 && !playerDone.getOrDefault(player, false)){
+                        player.sendMessage(DarkAPI.parse("<red>❖ <white>Вы <green>прошли <white>этот <yellow>уровень<white>!"));
+                        playerDone.put(player, true);
+                        for(Player target : playerParkourists){
+                            if(player != target){
+                                player.showPlayer(plugin, target);
+                            }
+                        }
                     }
                 }
             }
