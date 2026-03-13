@@ -146,6 +146,7 @@ public class TitanEvent implements Listener {
             player.setGameMode(GameMode.SPECTATOR);
             player.setSpectatorTarget(tadpole);
             playersInGame.add(player);
+            player.sendActionBar(DarkAPI.parse(""));
             lastGame.put(player.getName(), System.currentTimeMillis());
         }
 

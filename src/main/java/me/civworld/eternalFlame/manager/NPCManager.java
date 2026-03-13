@@ -6,6 +6,7 @@ import me.civworld.eternalFlame.action.ActionManager;
 import me.civworld.eternalFlame.action.PlayerAction;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
+import me.civworld.eternalFlame.type.EventStatus;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.trait.HologramTrait;
@@ -18,6 +19,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
@@ -171,6 +173,7 @@ public class NPCManager {
             CitizensAPI.getNPCRegistry().deregister(npc);
         }
         if(titanEvent != null){
+            titanEvent.setStatus(EventStatus.OFFLINE);
             for(Player player : titanEvent.playersInGame){
                 player.setGameMode(GameMode.SURVIVAL);
                 player.removePotionEffect(PotionEffectType.BLINDNESS);

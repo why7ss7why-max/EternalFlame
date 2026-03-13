@@ -106,7 +106,6 @@ public class ScoreboardManager {
                             removePlayerScoreboard(player);
                             if(titanEvent.playersInGame.isEmpty() && titanEvent.playersInBlindness.isEmpty() && titanEvent.playerParkourists.isEmpty()){
                                 npcManager.forceShutdown();
-                                titanEvent.setStatus(EventStatus.OFFLINE);
                             }
                             continue;
                         }
@@ -121,15 +120,44 @@ public class ScoreboardManager {
         titanEvent.npcManager.startParkour();
 
         int[] time = {60};
-        Bukkit.getScheduler().runTaskTimer(plugin, () -> updateTitanEvent(titanEvent, time), 20L, 20L);
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> updateTitanEvent(titanEvent, time, npcManager), 20L, 20L);
     }
 
     private String repeat(int repeats){
         return "❤".repeat(Math.max(0, repeats));
     }
 
-    public void updateTitanEvent(TitanEvent titanEvent, int[] time){
-        for (Player player : titanEvent.playersInGame) {
+    public void updateTitanEvent(TitanEvent titanEvent, int[] time, NPCManager npcManager){
+        if(time[0] < 0){
+            for(Player player : titanEvent.playerParkourists){
+                if(titanEvent.playerDone.containsKey(player)) continue;
+
+                player.sendMessage(DarkAPI.parse("<red>❖ <white>Время <yellow>вышло<white>! Вы <red>выбыли<white>!"));
+                player.showTitle(Title.title(DarkAPI.parse("<red>ПРОВАЛ"), DarkAPI.parse("<white>Вы <red>не успели<white>!")));
+
+                titanEvent.playersInCircle.remove(player);
+                titanEvent.playersInGame.remove(player);
+                titanEvent.playerParkourists.remove(player);
+                titanEvent.playersInBlindness.remove(player);
+                titanEvent.playerAttempts.remove(player);
+
+                player.removePotionEffect(PotionEffectType.BLINDNESS);
+                player.removePotionEffect(PotionEffectType.SLOW);
+
+                player.setGameMode(GameMode.SURVIVAL);
+
+                removePlayerScoreboard(player);
+
+                Location spawnLocation = config.get("titan-event.tp-on-leave", Location.class);
+                if(spawnLocation != null){
+                    player.teleport(spawnLocation);
+                }
+
+                if(titanEvent.playersInGame.isEmpty() && titanEvent.playersInBlindness.isEmpty() && titanEvent.playerParkourists.isEmpty()){
+                    npcManager.forceShutdown();
+                }
+            }
+        } else for (Player player : titanEvent.playersInGame) {
             Scoreboard board = player.getScoreboard();
             Objective obj = board.getObjective("titanEvent");
 
@@ -139,20 +167,20 @@ public class ScoreboardManager {
                 }
 
                 List<String> lines = new ArrayList<>();
-                lines.add(""); // пустая строка сверху
+                lines.add("");
                 lines.add("§cЗадача§f: Победить титана");
-                lines.add(" "); // пустая строка для отступа
+                lines.add(" ");
                 lines.add("§fИгроки:");
                 for (Player p : titanEvent.playersInGame) {
                     String done = titanEvent.playerDone.getOrDefault(player, false) ? " §a✔" : "";
                     lines.add("§7 - §f" + p.getName() + " §c" + repeat(titanEvent.playerAttempts.getOrDefault(p, 3)) + done);
                 }
-                lines.add("  "); // ещё одна пустая строка для отступа
-                lines.add("Время: §e" + formatTime(time[0])); // здесь можно вставлять динамический таймер
+                lines.add("  ");
+                lines.add("Время: §e" + formatTime(time[0]));
 
                 for (int i = 0; i < lines.size(); i++) {
                     String line = lines.get(i);
-                    if (line.trim().isEmpty()) line = " ".repeat(i + 1); // делает строку уникальной
+                    if (line.trim().isEmpty()) line = " ".repeat(i + 1);
                     Score score = obj.getScore(line);
                     score.setScore(lines.size() - i);
                 }

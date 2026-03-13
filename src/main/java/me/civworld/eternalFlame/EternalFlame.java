@@ -41,7 +41,7 @@ public final class EternalFlame extends JavaPlugin {
         ItemSpawner itemSpawner = new ItemSpawner(this, config);
         itemSpawner.updateSpawnings();
 
-        ScoreboardManager scoreboardManager = new ScoreboardManager(this);
+        ScoreboardManager scoreboardManager = new ScoreboardManager(this, config);
 
         npcManager = new NPCManager(this, config, scoreboardManager, actionManager);
 
