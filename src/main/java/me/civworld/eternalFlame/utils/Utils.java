@@ -1,5 +1,6 @@
 package me.civworld.eternalFlame.utils;
 
+import me.civworld.eternalFlame.type.ParkourDifficult;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -61,5 +62,19 @@ public class Utils {
         }
 
         return null;
+    }
+
+    public static String difficultToString(ParkourDifficult difficult){
+        return switch (difficult) {
+            case SUPER_EASY -> "§a§nСупер лёгкая";
+            case EASY -> "§2§nЛёгкая";
+            case LITE -> "§e§nЛайт";
+            case NORMAL -> "§6§nНормальная";
+            case LITE_HARD -> "§c§nЛайт-сложная";
+            case HARD -> "§4§nСложная";
+            case SUPER_HARD -> "§4§nСупер сложная";
+            case MEGA_HARD -> "§5§nМега сложная";
+            case LEGEND -> "§0§nЛегендарная";
+        };
     }
 }

@@ -7,6 +7,7 @@ import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.meteor.Meteor;
 import me.civworld.eternalFlame.manager.NPCManager;
 import me.civworld.eternalFlame.type.EventStatus;
+import me.civworld.eternalFlame.type.ParkourDifficult;
 import me.civworld.eternalFlame.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.entity.*;
@@ -40,6 +41,8 @@ public class TitanEvent implements Listener {
 
     public final HashMap<Player, Integer> playerAttempts = new HashMap<>();
     public final HashMap<Player, Boolean> playerDone = new HashMap<>();
+
+    public ParkourDifficult difficult = ParkourDifficult.SUPER_EASY;
 
     public final Location endLocation = new Location(Bukkit.getWorld("world"), 220.5, 65.5, -151.5);
 

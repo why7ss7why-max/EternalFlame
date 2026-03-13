@@ -7,6 +7,8 @@ import me.civworld.eternalFlame.action.PlayerAction;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
 import me.civworld.eternalFlame.type.EventStatus;
+import me.civworld.eternalFlame.type.ParkourDifficult;
+import me.civworld.eternalFlame.utils.Utils;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.trait.HologramTrait;
@@ -145,12 +147,15 @@ public class NPCManager {
 
         npc.setName("&9Титан");
 
+        List<PlayerAction> actions = actionManager.titanActions.get(ParkourDifficult.SUPER_EASY);
+        if(actions == null || actions.isEmpty()) return;
+
         new BukkitRunnable() {
             int index = 0;
 
             @Override
             public void run() {
-                if (index >= actionManager.titanActions.size()) {
+                if (index >= actions.size()) {
                     LookClose lookClose = npc.getOrAddTrait(LookClose.class);
                     lookClose.lookClose(true);
                     lookClose.setRange(40);
@@ -159,7 +164,7 @@ public class NPCManager {
                     return;
                 }
 
-                PlayerAction action = actionManager.titanActions.get(index);
+                PlayerAction action = actions.get(index);
                 npc.teleport(action.location, PlayerTeleportEvent.TeleportCause.PLUGIN);
                 index++;
             }
@@ -176,6 +181,7 @@ public class NPCManager {
             titanEvent.setStatus(EventStatus.OFFLINE);
             for(Player player : titanEvent.playersInGame){
                 player.setGameMode(GameMode.SURVIVAL);
+                Utils.removePlayerScoreboard(player);
                 player.removePotionEffect(PotionEffectType.BLINDNESS);
                 player.removePotionEffect(PotionEffectType.SLOW);
             }

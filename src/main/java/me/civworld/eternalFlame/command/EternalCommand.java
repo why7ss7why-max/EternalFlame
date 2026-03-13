@@ -5,6 +5,7 @@ import me.civworld.eternalFlame.circle.CircleManager;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
 import me.civworld.eternalFlame.spawner.ItemSpawner;
+import me.civworld.eternalFlame.type.ParkourDifficult;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -112,8 +113,27 @@ public class EternalCommand implements CommandExecutor {
                     return true;
                 }
 
+                if(args.length < 3) {
+                    player.sendMessage(DarkAPI.parse("<prefix>Использование: <green>/eternal startrec [ивент] [сложность]"));
+                    return true;
+                }
+
+                ParkourDifficult parkourDifficult;
+                try{
+                    parkourDifficult = ParkourDifficult.valueOf(args[2].toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    player.sendMessage(DarkAPI.parse("<prefix>Неверная <red>сложность<white>! Доступные:"));
+                    StringBuilder stringBuilder = new StringBuilder();
+                    for(ParkourDifficult value : ParkourDifficult.values()){
+                        stringBuilder.append("<green>").append(value.name().toLowerCase()).append(" <white>");
+                    }
+                    player.sendMessage(DarkAPI.parse("<prefix>" + stringBuilder));
+                    return true;
+                }
+
                 actionManager.clear();
                 actionManager.record = player.getName();
+                actionManager.difficult = parkourDifficult;
                 player.sendMessage(DarkAPI.parse("<prefix>Начинаем записывать ваши движения..."));
             }
             case "stoprec" -> {
@@ -127,8 +147,9 @@ public class EternalCommand implements CommandExecutor {
                     return true;
                 }
 
-                actionManager.record = null;
                 actionManager.saveActions("titan");
+                actionManager.record = null;
+                actionManager.difficult = null;
                 player.sendMessage(DarkAPI.parse("<prefix>Останавливаем запись..."));
             }
             default -> helpCommand(sender, label);

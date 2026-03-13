@@ -3,6 +3,7 @@ package me.civworld.eternalFlame.manager;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
 import me.civworld.eternalFlame.type.EventStatus;
+import me.civworld.eternalFlame.utils.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -49,11 +50,13 @@ public class ScoreboardManager {
         lines.add("");
         lines.add("§cЗадача§f: Победить титана");
         lines.add(" ");
+        lines.add("§fСложность: §7" + Utils.difficultToString(titanEvent.difficult));
+        lines.add("  ");
         lines.add("§fИгроки:");
         for(Player player : titanEvent.playersInGame){
             lines.add("§7 - §f" + player.getName() + " §c" + repeat(titanEvent.playerAttempts.getOrDefault(player, 3)));
         }
-        lines.add("  ");
+        lines.add("   ");
         lines.add("Время: §e01:00");
 
         for(int i = 0; i < lines.size(); i++){
@@ -170,12 +173,14 @@ public class ScoreboardManager {
                 lines.add("");
                 lines.add("§cЗадача§f: Победить титана");
                 lines.add(" ");
+                lines.add("§fСложность: §7" + Utils.difficultToString(titanEvent.difficult));
+                lines.add("  ");
                 lines.add("§fИгроки:");
                 for (Player p : titanEvent.playersInGame) {
                     String done = titanEvent.playerDone.getOrDefault(player, false) ? " §a✔" : "";
                     lines.add("§7 - §f" + p.getName() + " §c" + repeat(titanEvent.playerAttempts.getOrDefault(p, 3)) + done);
                 }
-                lines.add("  ");
+                lines.add("   ");
                 lines.add("Время: §e" + formatTime(time[0]));
 
                 for (int i = 0; i < lines.size(); i++) {
