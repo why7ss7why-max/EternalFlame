@@ -48,6 +48,12 @@ public class CircleManager {
 
                 for(Player player : centerCircle.getNearbyPlayers(radius)){
                     if(player.getLocation().distanceSquared(centerCircle) > radius) continue;
+
+                    if(titanEvent.playersInCircle.size() > 4){
+                        player.sendActionBar(DarkAPI.parse("Ивент <red>полон<white>!"));
+                        continue;
+                    }
+
                     if(titanEvent.eventStatus == EventStatus.RUNNING){
                         player.sendActionBar(DarkAPI.parse("Ивент <gray>уже <red>активен<white>!"));
                         continue;
