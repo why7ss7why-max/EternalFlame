@@ -29,11 +29,8 @@ public class LeaveListener implements Listener {
     public void onQuit(PlayerQuitEvent event){
         Player player = event.getPlayer();
 
-        if(!(titanEvent.playersInCircle.remove(player)
-                | titanEvent.playersInGame.remove(player)
-                | titanEvent.playerParkourists.remove(player)
-                | titanEvent.playersInBlindness.remove(player))) {
-            return;
+        if(titanEvent.player == player){
+            npcManager.forceShutdown();
         }
         player.removePotionEffect(PotionEffectType.BLINDNESS);
         player.removePotionEffect(PotionEffectType.SLOW);
@@ -45,10 +42,6 @@ public class LeaveListener implements Listener {
         Location spawnLocation = config.get("titan-event.tp-on-leave", Location.class);
         if(spawnLocation != null){
             player.teleport(spawnLocation);
-        }
-
-        if(titanEvent.playersInGame.isEmpty() && titanEvent.playersInBlindness.isEmpty() && titanEvent.playerParkourists.isEmpty()){
-            npcManager.forceShutdown();
         }
     }
 }

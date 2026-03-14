@@ -3,7 +3,6 @@ package me.civworld.eternalFlame.circle;
 import me.civworld.eternalFlame.EternalFlame;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
-import me.civworld.eternalFlame.type.EventStatus;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -13,8 +12,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import ru.civworld.darkAPI.DarkAPI;
-
-import java.util.ArrayList;
 
 public class CircleManager {
     private final Plugin plugin;
@@ -40,27 +37,17 @@ public class CircleManager {
                 int radius = config.get("titan-event.circle-radius", Integer.class);
                 if(radius == 0) return;
 
-                for(Player player : new ArrayList<>(titanEvent.playersInCircle)){
-                    if(player.getLocation().distanceSquared(centerCircle) > radius){
-                        titanEvent.removePlayer(player);
-                    }
-                }
-
                 for(Player player : centerCircle.getNearbyPlayers(radius)){
                     if(player.getLocation().distanceSquared(centerCircle) > radius) continue;
 
-                    if(titanEvent.playersInCircle.size() > 4){
-                        player.sendActionBar(DarkAPI.parse("Ивент <red>полон<white>!"));
-                        continue;
-                    }
-
-                    if(titanEvent.eventStatus == EventStatus.RUNNING){
+                    if(titanEvent.player != null){
                         player.sendActionBar(DarkAPI.parse("Ивент <gray>уже <red>активен<white>!"));
                         continue;
                     }
-                    titanEvent.updateAddPlayer(player);
 
+                    boolean removed = false;
                     for(int i = 0; i < player.getInventory().getSize(); i++){
+                        if(removed) break;
                         ItemStack item = player.getInventory().getItem(i);
                         if(item == null) continue;
 
@@ -72,13 +59,15 @@ public class CircleManager {
                         if(!value.equals("titan_shard")) continue;
 
                         if(item.getAmount() >= config.get("titan-event.need-amount-item", Integer.class)){
-                            if(titanEvent.eventStatus == EventStatus.OFFLINE){
-                                item.setAmount(item.getAmount() - config.get("titan-event.need-amount-item", Integer.class));
-                                player.getInventory().setItem(i, item);
-                                titanEvent.setStatus(EventStatus.PAID);
-                                player.sendMessage(DarkAPI.parse("<prefix>Вы <green>оплатили <white>старт <yellow>игры<white>!"));
-                            }
+                            item.setAmount(item.getAmount() - config.get("titan-event.need-amount-item", Integer.class));
+                            player.getInventory().setItem(i, item);
+                            player.sendMessage(DarkAPI.parse("<prefix>Вы <green>оплатили <white>старт <yellow>игры<white>!"));
+                            titanEvent.setPlayer(player);
+                            removed = true;
                         }
+                    }
+                    if(!removed){
+                        player.sendActionBar(DarkAPI.parse("Недостаточно <red>предметов<white>!"));
                     }
                 }
             }

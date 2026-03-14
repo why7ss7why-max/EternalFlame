@@ -6,7 +6,6 @@ import me.civworld.eternalFlame.action.ActionManager;
 import me.civworld.eternalFlame.action.PlayerAction;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.event.TitanEvent;
-import me.civworld.eternalFlame.type.EventStatus;
 import me.civworld.eternalFlame.type.ParkourDifficult;
 import me.civworld.eternalFlame.utils.Utils;
 import net.citizensnpcs.api.CitizensAPI;
@@ -20,14 +19,10 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 import ru.civworld.darkAPI.DarkAPI;
 
@@ -78,17 +73,13 @@ public class NPCManager {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             hologramTrait.addLine(firstLine);
 
-            for(Player player : titanEvent.playersInGame){
-                player.sendMessage(DarkAPI.parse("<red>❖ <#3446eb>Титан <gray>» <white>" + firstLine));
-            }
+            titanEvent.player.sendMessage(DarkAPI.parse("<red>❖ <#3446eb>Титан <gray>» <white>" + firstLine));
         }, 50L);
         Bukkit.getScheduler().runTaskLater(plugin, hologramTrait::clear, 130L);
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             hologramTrait.addLine(secondLine);
 
-            for(Player player : titanEvent.playersInGame){
-                player.sendMessage(DarkAPI.parse("<red>❖ <#3446eb>Титан <gray>» <white>" + secondLine));
-            }
+            titanEvent.player.sendMessage(DarkAPI.parse("<red>❖ <#3446eb>Титан <gray>» <white>" + secondLine));
         }, 160L);
         Bukkit.getScheduler().runTaskLater(plugin, hologramTrait::clear, 240L);
 
@@ -109,17 +100,15 @@ public class NPCManager {
             playerHologram = DHAPI.createHologram("player-hologram-titan-event", config.get("titan-event.position-cut", Location.class).clone().add(0, 1.4, 0), false);
             DHAPI.addHologramLine(playerHologram, "&f" + msg);
 
-            for(Player player : titanEvent.playersInGame){
-                player.sendMessage(DarkAPI.parse("<red>❖ <green>" + player.getName() + " <gray>» <white>" + msg));
-            }
+            titanEvent.player.sendMessage(DarkAPI.parse("<red>❖ <green>" + titanEvent.player.getName() + " <gray>» <white>" + msg));
         }, 260L);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> DHAPI.removeHologram(playerHologram.getName()), 320L);
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            for(Player player : titanEvent.playersInGame){
-                player.showTitle(Title.title(DarkAPI.parse("<red>Задача"), DarkAPI.parse("<white>Одолеть Титана")));
-            }
+            titanEvent.player.showTitle(Title.title(DarkAPI.parse("<red>Задача"), DarkAPI.parse("<white>Победить Титана")));
+
+            titanEvent.allowMove = true;
 
             scoreboardManager.titanEvent(titanEvent, this);
         }, 340L);
@@ -178,36 +167,13 @@ public class NPCManager {
             CitizensAPI.getNPCRegistry().deregister(npc);
         }
         if(titanEvent != null){
-            titanEvent.setStatus(EventStatus.OFFLINE);
-            for(Player player : titanEvent.playersInGame){
-                player.setGameMode(GameMode.SURVIVAL);
-                Utils.removePlayerScoreboard(player);
-                player.removePotionEffect(PotionEffectType.BLINDNESS);
-                player.removePotionEffect(PotionEffectType.SLOW);
-            }
-            for (Player p1 : titanEvent.playersInGame) {
-                for (Player p2 : titanEvent.playersInGame) {
-                    if (!p1.equals(p2)) {
-                        p1.showPlayer(plugin, p2);
-                        p2.showPlayer(plugin, p1);
-                    }
-                }
-            }
-            for (Player p1 : titanEvent.playersInBlindness) {
-                for (Player p2 : titanEvent.playersInBlindness) {
-                    if (!p1.equals(p2)) {
-                        p1.showPlayer(plugin, p2);
-                        p2.showPlayer(plugin, p1);
-                    }
-                }
-            }
-            for (Player player : titanEvent.playersInCircle) {
-                Scoreboard board = player.getScoreboard();
-                Objective obj = board.getObjective("titanEvent");
-                if (obj != null) {
-                    obj.unregister();
-                }
-            }
+            titanEvent.player.setGameMode(GameMode.SURVIVAL);
+            Utils.removePlayerScoreboard(titanEvent.player);
+            titanEvent.player.removePotionEffect(PotionEffectType.BLINDNESS);
+            titanEvent.player.removePotionEffect(PotionEffectType.SLOW);
+            Utils.removePlayerScoreboard(titanEvent.player);
+
+            titanEvent.player = null;
         }
         if(playerHologram != null){
             DHAPI.removeHologram(playerHologram.getName());

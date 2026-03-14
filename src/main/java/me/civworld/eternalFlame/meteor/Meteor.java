@@ -22,7 +22,7 @@ public class Meteor {
         BlockDisplay display = (BlockDisplay) world.spawnEntity(start, EntityType.BLOCK_DISPLAY);
         display.setBlock(Bukkit.createBlockData(Material.MAGMA_BLOCK));
 
-        float size = 8f;
+        float size = 12f;
         Vector3f scale = new Vector3f(size, size, size);
 
         Vector direction = target.toVector().subtract(start.toVector()).normalize();

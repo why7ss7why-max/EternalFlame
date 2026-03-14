@@ -55,9 +55,11 @@ public final class EternalFlame extends JavaPlugin {
                         Player player = event.getPlayer();
 
                         WrappedChatComponent chat = event.getPacket().getChatComponents().read(0);
+                        if(chat == null) return;
                         String json = chat.getJson();
+                        if(json == null) return;
 
-                        if (titanEvent.playersInGame.contains(player)) {
+                        if (titanEvent.player == player) {
                             Component component = GsonComponentSerializer.gson().deserialize(json);
                             String plain = PlainTextComponentSerializer.plainText().serialize(component);
 

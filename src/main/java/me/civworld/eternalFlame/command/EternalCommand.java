@@ -77,7 +77,7 @@ public class EternalCommand implements CommandExecutor {
                     return true;
                 }
 
-                if(titanEvent.playersInCircle.isEmpty()){
+                if(titanEvent.player == null){
                     sender.sendMessage(DarkAPI.parse("<prefix>Недостаточно <red>игроков<white> для <yellow>старта<white>!"));
                     return true;
                 }

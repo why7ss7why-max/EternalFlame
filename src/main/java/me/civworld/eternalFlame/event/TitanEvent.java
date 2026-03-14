@@ -6,9 +6,7 @@ import eu.decentsoftware.holograms.api.holograms.Hologram;
 import me.civworld.eternalFlame.config.Config;
 import me.civworld.eternalFlame.meteor.Meteor;
 import me.civworld.eternalFlame.manager.NPCManager;
-import me.civworld.eternalFlame.type.EventStatus;
 import me.civworld.eternalFlame.type.ParkourDifficult;
-import me.civworld.eternalFlame.utils.Utils;
 import org.bukkit.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -29,18 +27,17 @@ public class TitanEvent implements Listener {
     private final Plugin plugin;
     private final Config config;
     public final NPCManager npcManager;
-    public EventStatus eventStatus = EventStatus.OFFLINE;
 
     public final HashMap<String, Long> lastGame = new HashMap<>();
 
-    public final LinkedHashSet<Player> playersInCircle = new LinkedHashSet<>();
-    public final LinkedHashSet<Player> playersInGame = new LinkedHashSet<>();
-    public final LinkedHashSet<Player> playersInBlindness = new LinkedHashSet<>();
+    public Player player = null;
 
-    public final LinkedHashSet<Player> playerParkourists = new LinkedHashSet<>();
+    public boolean allowGamemode = false;
+    public boolean allowTeleport = false;
+    public boolean allowStopspectate = false;
+    public boolean allowMove = false;
 
-    public final HashMap<Player, Integer> playerAttempts = new HashMap<>();
-    public final HashMap<Player, Boolean> playerDone = new HashMap<>();
+    public int attempts = 3;
 
     public ParkourDifficult difficult = ParkourDifficult.SUPER_EASY;
 
@@ -58,23 +55,19 @@ public class TitanEvent implements Listener {
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                if(playerParkourists.isEmpty()) return;
+                if(player == null) return;
 
                 World world = plugin.getServer().getWorld("world");
                 if(world != null){
                     world.spawnParticle(Particle.VILLAGER_HAPPY, endLocation, 5);
                 }
 
-                for(Player player : playerParkourists){
-                    if(player.getLocation().distance(endLocation) < 1 && !playerDone.getOrDefault(player, false)){
-                        player.sendMessage(DarkAPI.parse("<red>❖ <white>Вы <green>прошли <white>этот <yellow>уровень<white>!"));
-                        playerDone.put(player, true);
-                        for(Player target : playerParkourists){
-                            if(player != target){
-                                player.showPlayer(plugin, target);
-                            }
-                        }
-                    }
+                Location loc = player.getLocation();
+
+                if (!loc.getWorld().equals(endLocation.getWorld())) return;
+
+                if (loc.distanceSquared(endLocation) < 1) {
+                    player.sendMessage(DarkAPI.parse("<red>❖ <white>Вы <green>прошли <white>этот <yellow>уровень<white>!"));
                 }
             }
         };
@@ -116,18 +109,7 @@ public class TitanEvent implements Listener {
             @Override
             public void run() {
                 if (tick >= totalTicks) {
-                    for (Player p1 : playersInGame) {
-                        for (Player p2 : playersInGame) {
-                            if (!p1.equals(p2)) {
-                                p1.hidePlayer(plugin, p2);
-                                p2.hidePlayer(plugin, p1);
-                            }
-                        }
-                    }
-
-                    for (Player player : new ArrayList<>(playersInGame)) {
-                        blindness(player);
-                    }
+                    blindness(player);
                     this.cancel();
                     return;
                 }
@@ -144,47 +126,50 @@ public class TitanEvent implements Listener {
             }
         }.runTaskTimer(plugin, 60L, 1L);
 
-        for (Player player : new ArrayList<>(playersInCircle)) {
-            playersInCircle.remove(player);
-            player.setGameMode(GameMode.SPECTATOR);
-            player.setSpectatorTarget(tadpole);
-            playersInGame.add(player);
-            player.sendActionBar(DarkAPI.parse(""));
-            lastGame.put(player.getName(), System.currentTimeMillis());
-        }
+        allowGamemode = true;
+        allowStopspectate = true;
+        allowTeleport = true;
+        player.setGameMode(GameMode.SPECTATOR);
+        player.setSpectatorTarget(tadpole);
+        allowGamemode = false;
+        allowStopspectate = false;
+        allowTeleport = false;
+        player.sendActionBar(DarkAPI.parse(""));
+        lastGame.put(player.getName(), System.currentTimeMillis());
 
         Location start = config.get("titan-event.meteorite.pos1", Location.class).clone();
         Location end = config.get("titan-event.meteorite.pos2", Location.class).clone();
 
         Meteor meteor = new Meteor(plugin);
         meteor.spawnMeteor(start, end);
-
-        setStatus(EventStatus.RUNNING);
     }
 
     private void blindness(Player player){
-        playersInGame.remove(player);
-        playersInBlindness.add(player);
+        allowGamemode = true;
+        allowStopspectate = true;
+        allowTeleport = true;
         player.setSpectatorTarget(null);
         player.setGameMode(GameMode.ADVENTURE);
+        allowGamemode = false;
+        allowStopspectate = false;
+        allowTeleport = false;
         Location newLoc = player.getLocation();
         newLoc.setYaw(89.9f);
         newLoc.setPitch(-0.1f);
         newLoc.add(0, -1.5, 0);
+        allowTeleport = true;
         player.teleport(newLoc);
+        allowTeleport = false;
         player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, Integer.MAX_VALUE, 255, false, false, false));
         player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, Integer.MAX_VALUE, 255, false, false, false));
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            player.removePotionEffect(PotionEffectType.BLINDNESS);
-            playersInGame.add(player);
-            playersInBlindness.remove(player);
-        }, 40L);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> player.removePotionEffect(PotionEffectType.BLINDNESS), 40L);
     }
 
     @EventHandler
     public void onDropItem(PlayerDropItemEvent event){
         Player player = event.getPlayer();
-        if(!playersInGame.contains(player) && !playersInBlindness.contains(player)) return;
+        if(this.player == null) return;
+        if(player != this.player) return;
 
         event.setCancelled(true);
     }
@@ -192,11 +177,12 @@ public class TitanEvent implements Listener {
     @EventHandler
     public void onMove(PlayerMoveEvent event){
         Player player = event.getPlayer();
-        if(!playersInGame.contains(player) && !playersInBlindness.contains(player)) return;
+        if(this.player == null) return;
+        if(player != this.player) return;
 
         if(event.getFrom().distance(event.getTo()) == 0) return;
 
-        if(playerParkourists.contains(player)) return;
+        if(allowMove) return;
 
         event.setCancelled(true);
     }
@@ -204,7 +190,10 @@ public class TitanEvent implements Listener {
     @EventHandler
     public void onChangeGameMode(PlayerGameModeChangeEvent event){
         Player player = event.getPlayer();
-        if(!playersInGame.contains(player)) return;
+        if(this.player == null) return;
+        if(player != this.player) return;
+
+        if(allowGamemode) return;
 
         event.setCancelled(true);
     }
@@ -212,9 +201,10 @@ public class TitanEvent implements Listener {
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event){
         Player player = event.getPlayer();
-        if(!playersInGame.contains(player)) return;
+        if(this.player == null) return;
+        if(player != this.player) return;
 
-        if(event.getCause() == PlayerTeleportEvent.TeleportCause.UNKNOWN) return;
+        if(allowTeleport) return;
 
         event.setCancelled(true);
     }
@@ -222,7 +212,10 @@ public class TitanEvent implements Listener {
     @EventHandler
     public void onStop(PlayerStopSpectatingEntityEvent event){
         Player player = event.getPlayer();
-        if(!playersInGame.contains(player)) return;
+        if(this.player == null) return;
+        if(player != this.player) return;
+
+        if(allowStopspectate) return;
 
         event.setCancelled(true);
     }
@@ -230,14 +223,9 @@ public class TitanEvent implements Listener {
     public void updateHologram(){
         if(hologram == null) createHologram();
 
-        DHAPI.setHologramLine(hologram, 1, "Статус: " + statusToString(eventStatus));
-        if(eventStatus == EventStatus.OFFLINE){
-            DHAPI.setHologramLine(hologram, 3, "Для старта <#FF0000>необходимо");
-            DHAPI.setHologramLine(hologram, 4, "иметь <#3446eb>x" + config.get("titan-event.need-amount-item", Integer.class) + " Осколок Титана");
-        } else {
-            DHAPI.setHologramLine(hologram, 3, "Попробуй <#00FF00>одолеть<#FFFFFF> самого <#3446eb>Титана");
-            DHAPI.setHologramLine(hologram, 4, "и завладеть <#808080>его <#0000FF>рангом<#FFFFFF>!");
-        }
+        DHAPI.setHologramLine(hologram, 1, "Статус: " + statusToString());
+        DHAPI.setHologramLine(hologram, 3, "Для старта <#FF0000>необходимо");
+        DHAPI.setHologramLine(hologram, 4, "иметь <#3446eb>x" + config.get("titan-event.need-amount-item", Integer.class) + " Осколок Титана");
     }
 
     private void createHologram(){
@@ -247,55 +235,25 @@ public class TitanEvent implements Listener {
 
         hologram = DHAPI.createHologram("titan-event-holo", config.get("titan-event.position", Location.class).add(0, 1.75, 0));
         DHAPI.addHologramLine(hologram, "<#3446eb>Падение Титана");
-        DHAPI.addHologramLine(hologram, "Статус: " + statusToString(eventStatus));
+        DHAPI.addHologramLine(hologram, "Статус: " + statusToString());
         DHAPI.addHologramLine(hologram, "");
-        if(eventStatus == EventStatus.OFFLINE){
-            DHAPI.addHologramLine(hologram, "Для старта <#FF0000>необходимо");
-            DHAPI.addHologramLine(hologram, "иметь <#3446eb>x" + config.get("titan-event.need-amount-item", Integer.class) + " Осколок Титана");
-        } else {
-            DHAPI.addHologramLine(hologram, "Попробуй <#00FF00>одолеть<#FFFFFF> самого <#3446eb>Титана");
-            DHAPI.addHologramLine(hologram, "и завладеть <#808080>его <#0000FF>рангом<#FFFFFF>!");
-        }
+        DHAPI.addHologramLine(hologram, "Для старта <#FF0000>необходимо");
+        DHAPI.addHologramLine(hologram, "иметь <#3446eb>x" + config.get("titan-event.need-amount-item", Integer.class) + " Осколок Титана");
 
         hologram.showAll();
     }
 
-    public void setStatus(EventStatus status){
-        eventStatus = status;
+    public void setPlayer(Player player){
+        player.sendMessage(DarkAPI.parse("<prefix>Вы <green>вступили<white> в <blue>ивент<white>!"));
+        this.player = player;
+
+        startGame();
+
         updateHologram();
     }
 
-    public void updateAddPlayer(Player player){
-        if(lastGame.containsKey(player.getName())){
-            long lastGame = this.lastGame.get(player.getName());
-            if(System.currentTimeMillis() - lastGame > 120000000){
-                player.sendMessage(DarkAPI.parse("<prefix>Вы <gray>недавно <red>участвовали<white> в игре!"));
-                player.sendMessage(DarkAPI.parse("<prefix>Подождите ещё: <yellow>" + Utils.formatMillis(System.currentTimeMillis() - lastGame)));
-            }
-        }
-        if(!playersInCircle.contains(player)){
-            player.sendActionBar(DarkAPI.parse("Вы <green>вступили<white> в <blue>ивент<white>!"));
-            playersInCircle.add(player);
-
-            if(playersInCircle.size() > 1){
-                startGame();
-            }
-
-            updateHologram();
-        }
-    }
-
-    private String statusToString(EventStatus status){
-        return switch (status){
-            case RUNNING -> "<#FF0000>Активен";
-            case PAID -> "<#008000>Ожидание игроков (" + playersInCircle.size() + "/5)";
-            case OFFLINE -> "<#808080>Не активен";
-        };
-    }
-
-    public void removePlayer(Player player){
-        player.sendActionBar(DarkAPI.parse("Вы <red>покинули<white> <white>ивент<white>!"));
-        playersInCircle.remove(player);
-        updateHologram();
+    private String statusToString(){
+        if(player == null) return "<#808080>Не активен";
+        return "<#FF0000>Активен";
     }
 }

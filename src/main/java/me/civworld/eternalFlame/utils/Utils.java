@@ -1,6 +1,7 @@
 package me.civworld.eternalFlame.utils;
 
 import me.civworld.eternalFlame.type.ParkourDifficult;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -13,11 +14,7 @@ import java.util.Random;
 
 public class Utils {
     public static void removePlayerScoreboard(Player player){
-        Scoreboard board = player.getScoreboard();
-        Objective obj = board.getObjective("titanEvent");
-        if (obj != null) {
-            obj.unregister();
-        }
+        player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
     }
 
     public static String formatMillis(long millis) {
